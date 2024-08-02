@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "Claude Data Fetcher",
+    "version": "1.0",
+    "description": "A side panel extension to enhance Anthropic Claude conversations by giving it access to information on the Internet.",
+    "permissions": [
+        "sidePanel",
+        "storage",
+        "activeTab"  
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_title": "Open Claude Data Fetcher"
+    },
+    "side_panel": {
+        "default_path": "sidepanel.html"
+    }
+}
