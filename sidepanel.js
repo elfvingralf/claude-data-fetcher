@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const queryItem = document.createElement('div');
         queryItem.className = 'new-query-input';
         queryItem.innerHTML = `
-            <textarea rows="4" placeholder="Enter your prompt here"></textarea>
+            <textarea rows="4" placeholder="Briefly describe what data you're looking for and why"></textarea>
             <div class="submit-btn">
                 <div class="progress-indicator" style="display: none;">
                     <div class="progress-step" id="step1">Optimizing search terms</div>
