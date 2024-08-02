@@ -14,9 +14,11 @@ Claude Data Fetcher is a Chrome extension designed to enhance Anthropic Claude c
 
 1. **Clone the Repository**:
     ```sh
-    git clone https://github.com/yourusername/claude-data-fetcher.git
+    git clone https://github.com/elfvingralf/claude-data-fetcher.git
     cd claude-data-fetcher
     ```
+
+    Or download the repo by clicking the <> Code button above, selecting "Download zip", and unzipping it on your computer
 
 2. **Load the Extension in Chrome**:
     - Open Chrome and navigate to `chrome://extensions/`.
