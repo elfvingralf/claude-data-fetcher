@@ -1,46 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Claude Helper</title>
-  <link rel="stylesheet" type="text/css" href="styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Helper</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
-  <div class="top-bar">
-    <span id="newQueryBtn"><i class="fas fa-plus"></i> new prompt</span>
-    <span id="settingsBtn"><i class="fas fa-cog"></i> settings</span>
-  </div>
-  <div class="container">
-    <div id="apiKeySection" class="settings-box">
-      <p class="info-text">
-          Claude Helper uses OpenAI GPT-4o-mini to process scraped data. Please enter your OpenAI API key below. It will be stored securely and encrypted in your browser's local storage.
-      </p>
-      <div class="input-group">
-          <input type="password" id="apiKey" placeholder="Enter your OpenAI API key">
-      </div>
-      <div class="submit-btn">
-          <button id="submitBtn" disabled>Save</button>
-      </div>
-  </div>
-    <div id="mainSection" style="display: none;">
-      <div id="queriesSection">
-        <!-- Query items will be dynamically added here -->
-      </div>
+    <div class="wrapper">
+        <div class="content">
+            <div class="top-bar">
+                <span id="newQueryBtn"><i class="fas fa-plus"></i> New prompt</span>
+                <span id="settingsBtn"><i class="fas fa-cog"></i> Settings</span>
+            </div>
+
+            <div class="container">
+                <div id="apiKeySection" class="settings-box">
+                    <p class="info-text">Claude Helper uses OpenAI GPT-4o-mini to process scraped data. Please enter your OpenAI API key below. It will be stored securely and encrypted in your browser's local storage.</p>
+                    <div class="input-group">
+                        <input type="password" id="apiKey" placeholder="Enter your OpenAI API key">
+                    </div>
+                    <div class="submit-btn">
+                        <button id="submitBtn" disabled>Save</button>
+                    </div>
+                </div>
+
+                <div id="mainSection" style="display: none;">
+                    <div id="queriesSection"></div>
+                </div>
+
+                <div id="settingsSection" class="settings-box" style="display: none;">
+                    <p class="info-text">Your OpenAI API key is stored encrypted in your Chrome browser.</p>
+                    <div class="input-group">
+                        <label for="updateApiKey">OpenAI API Key:</label>
+                        <input type="password" id="updateApiKey">
+                    </div>
+                    <div class="input-group">
+                        <label for="showIconToggle">Show icon in Claude Chat:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="showIconToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <button id="updateBtn" disabled>Update</button>
+                    <button id="exitSettingsBtn">Exit Settings</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            Made with <span class="heart">❤️</span> by <a href="https://www.x.com/@ralfelfving" target="_blank">@ralfelfving</a> | Powered by <a href="https://www.jina.ai" target="_blank">Jina.ai</a>
+        </footer>
     </div>
-    <div id="settingsSection" class="settings-box" style="display: none;">
-      <p class="info-text">Your OpenAI API key is stored encrypted in your Chrome browser.</p>
-      <div class="input-group">
-        <label for="updateApiKey">OpenAI API Key:</label>
-        <input type="password" id="updateApiKey" placeholder="Enter your new API key">
-      </div>
-      <button id="updateBtn" disabled>Update</button>
-      <button id="exitSettingsBtn">Exit Settings</button>
-    </div>
-  </div>
-  <footer class="footer">
-    Made with <span class="heart">❤️</span> by <a href="https://www.x.com/@ralfelfving" target="_blank">@ralfelfving</a> | Powered by <a href="https://www.jina.ai" target="_blank">Jina.ai</a>
-  </footer>
-  <script src="sidepanel.js"></script>
+
+    <script src="sidepanel.js"></script>
 </body>
 </html>

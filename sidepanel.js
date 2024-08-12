@@ -1,138 +1,3 @@
-function generateEncryptionKey() {
-    return crypto.getRandomValues(new Uint8Array(32));
-}
-
-async function deriveKey(masterKey, salt) {
-    const keyMaterial = await crypto.subtle.importKey(
-        'raw',
-        masterKey,
-        { name: 'PBKDF2' },
-        false,
-        ['deriveBits', 'deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-        {
-            name: 'PBKDF2',
-            salt: salt,
-            iterations: 100000,
-            hash: 'SHA-256'
-        },
-        keyMaterial,
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-    );
-}
-
-async function encryptData(data, masterKey) {
-    const enc = new TextEncoder();
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(masterKey, salt);
-    const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv },
-        key,
-        enc.encode(data)
-    );
-    return {
-        salt: Array.from(salt),
-        iv: Array.from(iv),
-        encryptedData: Array.from(new Uint8Array(encrypted))
-    };
-}
-
-async function decryptData(encryptedObj, masterKey) {
-    const key = await deriveKey(masterKey, new Uint8Array(encryptedObj.salt));
-    const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(encryptedObj.iv) },
-        key,
-        new Uint8Array(encryptedObj.encryptedData)
-    );
-    return new TextDecoder().decode(decrypted);
-}
-
-function sanitizeResponse(response) {
-    // Remove or replace unwanted characters
-    return response
-        .replace(/["'`]/g, '')  // Remove various types of quotes
-        .replace(/[<>]/g, '')   // Remove angle brackets
-        .replace(/[{}[\]]/g, '') // Remove braces and brackets
-        .trim();
-}
-
-async function makeOpenAIRequest(prompt, apiKey) {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-                {"role": "system", "content": "You are a helpful assistant, helping to craft Google search queries based on what the user is trying to achieve. Only respond with the words you think should be used in the Google search, not with any other information."},
-                {"role": "user", "content": `Please craft a Google search for this: "${prompt}"`}
-            ]
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error(`OpenAI API request failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content.trim();
-}
-
-async function queryJinaAI(openaiResponse) {
-    // Sanitize the response to remove unwanted characters
-    const sanitizedResponse = sanitizeResponse(openaiResponse);
-    
-    // Continue with the sanitized response
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
-            {
-                action: "fetchJinaData",
-                query: sanitizedResponse
-            },
-            (response) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else if (response.error) {
-                    reject(new Error(response.error));
-                } else {
-                    resolve(response.data);
-                }
-            }
-        );
-    });
-}
-
-async function refineWithOpenAI(data, apiKey, userPrompt) {
-    const refinedResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: `You're a helpful assistant that cleans messy scraped website data and extracts information relevant to your colleague's research. Your colleagues use the cleaned text as context when they write research articles about a particular topic. Only respond with cleaned data you think is relevant for the topic and question in mind. Provide the cleaned text in the order it appears, without images, don't add your comment, or any information that isn't in the scraped data. Always include the source and title of all scraped pages, which appears as this in the scraped data: [x] Title: <source x title will be here> [x] URL Source: <url for source x will be here>` },
-                { role: "user", content: `Your colleague is answering the question "${userPrompt}", can you please extract the relevant text and source information from this scraped data: ${data}` }
-            ]
-        })
-    });
-
-    if (!refinedResponse.ok) {
-        throw new Error(`There was an error calling OpenAI: ${refinedResponse.statusText}`);
-    }
-
-    const refinedData = await refinedResponse.json();
-    return refinedData.choices[0].message.content.trim();
-}
-
-
 document.addEventListener('DOMContentLoaded', function() {
     const apiKeyInput = document.getElementById('apiKey');
     const submitBtn = document.getElementById('submitBtn');
@@ -145,8 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const updateApiKeyInput = document.getElementById('updateApiKey');
     const updateBtn = document.getElementById('updateBtn');
     const exitSettingsBtn = document.getElementById('exitSettingsBtn');
-
-    let originalApiKeyMasked = '';
+    const showIconToggle = document.getElementById('showIconToggle');
 
     function showMainSection() {
         apiKeySection.style.display = 'none';
@@ -165,21 +29,23 @@ document.addEventListener('DOMContentLoaded', function() {
         mainSection.style.display = 'none';
         apiKeySection.style.display = 'none';
         
+        // Load the current toggle state
+        chrome.storage.local.get(['showIcon'], function(result) {
+            showIconToggle.checked = result.showIcon !== false; // Default to true if not set
+        });
+
         // Display the masked API key if available
-        chrome.storage.local.get(['encryptedApiKey'], async function(result) {
-            if (result.encryptedApiKey) {
-                const masterKey = await getMasterKey();
-                const decryptedApiKey = await decryptData(result.encryptedApiKey, masterKey);
-                originalApiKeyMasked = '*'.repeat(decryptedApiKey.length);
-                updateApiKeyInput.value = originalApiKeyMasked;
+        chrome.runtime.sendMessage({action: "getApiKey"}, function(response) {
+            if (response.apiKey) {
+                updateApiKeyInput.value = '*'.repeat(response.apiKey.length);
             } else {
                 updateApiKeyInput.value = '';
             }
         });
     }
 
-    chrome.storage.local.get(['encryptedApiKey'], function(result) {
-        if (result.encryptedApiKey) {
+    chrome.runtime.sendMessage({action: "getApiKey"}, function(response) {
+        if (response.apiKey) {
             showMainSection();
             addNewQueryInput();
         } else {
@@ -191,71 +57,50 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = this.value.length < 10;
     });
 
-    submitBtn.addEventListener('click', async function() {
+    submitBtn.addEventListener('click', function() {
         const apiKey = apiKeyInput.value;
-
-        try {
-            const masterKey = await getMasterKey();
-            const encryptedData = await encryptData(apiKey, masterKey);
-
-            chrome.storage.local.set({ encryptedApiKey: encryptedData }, function() {
-                if (chrome.runtime.lastError) return;
+        chrome.runtime.sendMessage({action: "setApiKey", apiKey: apiKey}, function(response) {
+            if (response.success) {
                 showMainSection();
                 addNewQueryInput();
-            });
-        } catch (error) {
-            // Handle error silently
-        }
+            } else {
+                console.error('Error setting API key:', response.error);
+            }
+        });
     });
 
-    settingsBtn.addEventListener('click', function() {
-        showSettingsSection();
-    });
+    settingsBtn.addEventListener('click', showSettingsSection);
 
     exitSettingsBtn.addEventListener('click', function() {
         showMainSection();
     });
 
     updateApiKeyInput.addEventListener('input', function() {
-        updateBtn.disabled = (updateApiKeyInput.value === originalApiKeyMasked || updateApiKeyInput.value.length < 10);
+        updateBtn.disabled = this.value.length < 10;
     });
 
-    updateBtn.addEventListener('click', async function() {
+    updateBtn.addEventListener('click', function() {
         const newApiKey = updateApiKeyInput.value;
-
-        if (newApiKey === originalApiKeyMasked) {
-            return; // No change to the API key
-        }
-
-        try {
-            const masterKey = await getMasterKey();
-            const encryptedData = await encryptData(newApiKey, masterKey);
-
-            chrome.storage.local.set({ encryptedApiKey: encryptedData }, function() {
-                if (chrome.runtime.lastError) {
-                    console.error('Error updating API key:', chrome.runtime.lastError);
-                    return;
-                }
+        chrome.runtime.sendMessage({action: "setApiKey", apiKey: newApiKey}, function(response) {
+            if (response.success) {
                 showMainSection();
-            });
-        } catch (error) {
-            console.error('Error updating API key:', error);
-        }
+            } else {
+                console.error('Error updating API key:', response.error);
+            }
+        });
     });
 
     newQueryBtn.addEventListener('click', function() {
         addNewQueryInput();
     });
     
-    // Function to re-enable the new query button
     function enableNewQueryButton() {
         newQueryBtn.classList.remove('new-query-btn-disabled');
     }
 
     function addNewQueryInput() {
-        // Check if there's already an open input prompt
         if (document.querySelector('.new-query-input')) {
-            return; // Exit if there's already an open input prompt
+            return;
         }
     
         const queryItem = document.createElement('div');
@@ -279,65 +124,68 @@ document.addEventListener('DOMContentLoaded', function() {
             handleSubmit(queryItem, submitButton, progressIndicator);
         });
     
-        // Disable the new query button
         newQueryBtn.classList.add('new-query-btn-disabled');
     }
     
-    async function handleSubmit(queryItem, submitButton, progressIndicator) {
+    function handleSubmit(queryItem, submitButton, progressIndicator) {
         const textarea = queryItem.querySelector('textarea');
         const prompt = textarea.value;
         if (!prompt.trim()) return;
     
         submitButton.disabled = true;
-        submitButton.style.display = 'none'; // Hide the submit button
+        submitButton.style.display = 'none';
         progressIndicator.style.display = 'flex';
     
-        try {
-            const result = await new Promise((resolve) => chrome.storage.local.get(['encryptedApiKey'], resolve));
-            if (!result.encryptedApiKey) {
-                throw new Error('API key not found');
+        // Reset progress steps
+        document.querySelectorAll('.progress-step').forEach(step => {
+            step.classList.remove('completed');
+            step.innerHTML = step.textContent;
+        });
+    
+        chrome.runtime.sendMessage({action: "processInput", text: prompt}, function(response) {
+            if (response.data) {
+                // Ensure all steps are marked as completed
+                updateProgress('step3');
+                displayQueryAndResponse(queryItem, prompt, response.data);
+            } else if (response.error) {
+                displayQueryAndResponse(queryItem, prompt, `Error: ${response.error}`);
             }
-    
-            const masterKey = await getMasterKey();
-            const decryptedApiKey = await decryptData(result.encryptedApiKey, masterKey);
-    
-            // Step 1: Get response from OpenAI
-            const openaiResponse = await makeOpenAIRequest(prompt, decryptedApiKey);
-            console.log(openaiResponse)
-            updateProgress('step1');
-    
-            // Step 2: Query Jina AI with the OpenAI response
-            const jinaData = await queryJinaAI(openaiResponse);
-            updateProgress('step2');
-    
-            // Step 3: Refine the data using OpenAI
-            const refinedData = await refineWithOpenAI(jinaData, decryptedApiKey, prompt);
-            updateProgress('step3');
-    
-            // Display the refined data
-            displayQueryAndResponse(queryItem, prompt, refinedData);
-        } catch (error) {
-            displayQueryAndResponse(queryItem, prompt, `There was an error when searching, please try again: ${error.message}`);
-        } finally {
             progressIndicator.style.display = 'none';
             queryItem.remove();
-            enableNewQueryButton(); // Re-enable the new query button
-        }
+            enableNewQueryButton();
+        });
     }
     
     function updateProgress(stepId) {
-        const stepElement = document.getElementById(stepId);
-        if (stepElement) {
-            stepElement.classList.add('completed');
-            stepElement.innerHTML = `<i class="fas fa-check"></i> ${stepElement.textContent}`;
-        }
+        const steps = ['step1', 'step2', 'step3'];
+        const currentStepIndex = steps.indexOf(stepId);
     
-        // Show spinner for the next step
-        const nextStepElement = stepElement.nextElementSibling;
-        if (nextStepElement && !nextStepElement.classList.contains('completed')) {
-            nextStepElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${nextStepElement.textContent}`;
-        }
+        steps.forEach((step, index) => {
+            const stepElement = document.getElementById(step);
+            if (stepElement) {
+                if (index < currentStepIndex) {
+                    // Previous steps are completed
+                    stepElement.classList.add('completed');
+                    stepElement.innerHTML = `<i class="fas fa-check"></i> ${stepElement.textContent}`;
+                } else if (index === currentStepIndex) {
+                    // Current step is in progress
+                    stepElement.classList.remove('completed');
+                    stepElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${stepElement.textContent}`;
+                } else {
+                    // Future steps are reset
+                    stepElement.classList.remove('completed');
+                    stepElement.innerHTML = stepElement.textContent;
+                }
+            }
+        });
     }
+    
+    // Add a message listener for progress updates
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === "updateProgress") {
+            updateProgress(message.step);
+        }
+    });
 
     function displayQueryAndResponse(queryItem, prompt, response) {
         const queryResponseItem = document.createElement('div');
@@ -370,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function copyResponse(response) {
         navigator.clipboard.writeText(response).then(function() {
-            // Optionally, provide some visual feedback that the text was copied
             console.log('Response copied to clipboard');
         });
     }
@@ -387,16 +234,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 : fullResponse;
         }
     }
-});
 
-async function getMasterKey() {
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({ action: 'getMasterKey' }, function (response) {
-            if (response.error) {
-                reject(response.error);
-            } else {
-                resolve(new Uint8Array(response.masterKey));
+    showIconToggle.addEventListener('change', function() {
+        const showIcon = this.checked;
+        chrome.runtime.sendMessage({action: "setShowIcon", showIcon: showIcon}, function(response) {
+            if (!response.success) {
+                console.error('Error setting show icon:', response.error);
             }
         });
     });
-}
+});

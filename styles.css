@@ -1,11 +1,13 @@
-/* General styles for the entire panel */
 body {
     font-family: 'Arial', sans-serif; 
     margin: 0;
-    padding: 10px;
+    padding: 0;
     background-color: #2b2a27;
     color: #E0E0E0; 
     font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .top-bar {
@@ -39,6 +41,7 @@ body {
 
 .input-group {
     margin-bottom: 15px;
+    margin-top: 15px;
 }
 
 label {
@@ -85,7 +88,7 @@ button:disabled {
     cursor: not-allowed;
 }
 
-#apiKeySection {
+#apiKeySection, #settingsSection {
     background-color: #393937bf;
     border-radius: 4px;
     padding: 15px;
@@ -93,12 +96,11 @@ button:disabled {
     box-shadow: 0 2px 4px rgba(0,0,0,0.25);
 }
 
-#apiKeySection .submit-btn {
+.submit-btn {
     display: flex;
     justify-content: flex-end;
     margin-top: 10px;
 }
-
 
 .query-item {
     border-radius: 8px;
@@ -132,7 +134,7 @@ button:disabled {
 }
 
 .response-content {
-    white-space: nowrap;
+    white-space: pre-wrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 10px;
@@ -142,7 +144,6 @@ button:disabled {
 }
 
 .response-content.expanded {
-    white-space: pre-wrap;
     max-height: none;
 }
 
@@ -182,88 +183,13 @@ button:disabled {
     box-shadow: 0 2px 4px rgba(0,0,0,0.25);
 }
 
-.submit-btn {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
-}
-
 .new-query-btn-disabled {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
 .new-query-btn-disabled:hover {
-    color: grey !important;
-    cursor: not-allowed;
-}
-
-.settings-box {
-    background-color: #393937bf;
-    border-radius: 4px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.);
-    margin-bottom: 10px;
-}
-
-.input-group {
-    margin-bottom: 15px;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #CCCCCC;
-}
-
-/* .input-group input[type="password"],
-.input-group textarea {
-    width: calc(100% - 16px);
-    padding: 8px;
-    border: 1px solid #444;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #2E2E2E;
-    color: #E0E0E0;
-}
-
-textarea {
-    resize: vertical;
-} */
-
-button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-right: 10px;
-}
-
-button:hover:not(:disabled) {
-    background-color: #45a049;
-}
-
-button:disabled {
-    background-color: #666666;
-    cursor: not-allowed;
-}
-
-.spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top: 4px solid #fff;
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    margin-left: 10px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    color: #E0E0E0 !important;
 }
 
 .progress-indicator {
@@ -282,34 +208,92 @@ button:disabled {
     margin-right: 8px;
 }
 
-.completed i {
-    color: green;
-}
-
 .progress-step.completed {
     color: #4CAF50;
 }
 
 .footer {
     text-align: center;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding: 10px;
+    background-color: #2b2a27;
+    color: #888;
     font-size: 12px;
-    color: #555;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-  }
-  
-  .heart {
-    color: #555;
-  }
+    border-top: 0px solid #444;
+}
 
-  .footer a {
+.heart {
+    color: #888;
+}
+
+.footer a {
     color: inherit; 
     text-decoration: none;
-  }
-  
-  .footer a:hover {
-    color: #727272;
-  }
+}
+
+.footer a:hover {
+    color: #aaa;
+}
+
+/* Toggle switch styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+.slider.round {
+    border-radius: 22px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+}
