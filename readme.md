@@ -2,6 +2,8 @@
 
 Claude Data Fetcher is a Chrome extension designed to enhance Anthropic Claude conversations by providing it access to information on the Internet. This extension uses Jina AI's Reader (scraping) API and OpenAI's GPT-4o-mini model to process search results and seamlessly integrate them into Claude's chat interface.
 
+https://github.com/user-attachments/assets/97962be1-79da-42b2-ad27-99070f4d51ea
+
 ## Features
 
 - **Claude Chat Integration**: Adds a custom button directly to Claude's chat interface for instant information retrieval.
