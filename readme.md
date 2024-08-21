@@ -15,6 +15,7 @@ https://github.com/user-attachments/assets/97962be1-79da-42b2-ad27-99070f4d51ea
 - **Real-time Progress Updates**: Visual feedback on the processing stages between submitting your query to getting the final response
 
 ## Installation
+If you prefer, you can install the plugin from the [Chrome Plugin store](https://chromewebstore.google.com/detail/claude-data-fetcher/eenilhbheldklhbmjeigcibmklghflao). If not, follow the instructions below.
 
 1. **Clone the Repository**:
     ```sh

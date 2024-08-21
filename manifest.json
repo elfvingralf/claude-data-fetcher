@@ -2,11 +2,10 @@
     "manifest_version": 3,
     "name": "Claude Data Fetcher",
     "version": "1.1",
-    "description": "A Chrome extension to enhance Anthropic Claude conversations by giving it access to information on the Internet.",
+    "description": "Enhance your Claude AI Chat experience by giving it access to search and browse information on the Internet.",
     "permissions": [
         "sidePanel",
         "storage",
-        "activeTab",
         "tabs"
     ],
     "host_permissions": [
